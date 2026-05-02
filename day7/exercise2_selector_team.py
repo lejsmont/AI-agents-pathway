@@ -65,13 +65,45 @@ from autogen_ext.models.anthropic import AnthropicChatCompletionClient
 # Hint: Type annotations on ALL parameters and return type are required.
 # Hint: The docstring becomes the tool's description for the LLM.
 
-async def search_web(query: str) -> str:
-    """Search the web for information on a topic"""
-    return "According to recent surveys, Python is used by 70% of ML engineers and Javascript is used by 30% of ML engineers. Python usage is growing 3% YOY over last decade and Javascript usage is flat"
+def search_web(query: str) -> str:
+    """Mock web search. Returns varied fake results based on the query."""
+    # Variation prevents the "Researcher calls search_web 5 times with same
+    # answer" degenerate loop you observed on Day 7.
+    facts_by_keyword = {
+        "poland": (
+            "Poland EV adoption 2025: EV market share reached 6.8% of new car "
+            "sales in H1 2025, up from 4.2% in 2024. Charging infrastructure "
+            "grew 34% YoY. Incentive program 'Mój Elektryk' extended through 2027."
+        ),
+        "germany": (
+            "Germany EV adoption 2025: EV market share 21.4% of new car sales "
+            "YTD, a drop from 25.1% in 2024 after subsidy cuts. Total EV stock "
+            "crossed 2M vehicles. Fast-charging network densest in EU."
+        ),
+        "europe": (
+            "EU-wide EV share Q1-Q2 2025: 17.8% of new registrations, steady "
+            "vs. 2024. Eastern Europe growing faster off smaller base."
+        ),
+    }
+    q = query.lower()
+    for kw, txt in facts_by_keyword.items():
+        if kw in q:
+            return txt
+    return f"No strong match for '{query}'. Try queries with country names."
 
-async def lookup_documentation(topic: str) -> str:
-    """Look up technical documentation or API refereces."""
-    return "Some technical documentation"
+
+def lookup_documentation(topic: str) -> str:
+    """Mock doc lookup. Returns structured stats."""
+    stats = {
+        "poland_ev_stats_2025": {"market_share_pct": 6.8, "total_stock": 98000, "yoy_growth_pct": 42.0},
+        "germany_ev_stats_2025": {"market_share_pct": 21.4, "total_stock": 2100000, "yoy_growth_pct": -14.7},
+        "eu_charging_density": {"poland_per_100km": 3.1, "germany_per_100km": 18.9},
+    }
+    key = topic.lower().replace(" ", "_")
+    for k, v in stats.items():
+        if key in k or k in key:
+            return json.dumps(v)
+    return f"No documentation match for '{topic}'."
 
 # TODO 2: Create tool functions for the Analyst agent.
 #
@@ -330,7 +362,7 @@ async def run_selector_team(task: str):
     print(f"Stop reason: {result.stop_reason}")
 
     await model_client.close()
-
+    return result 
 
 
 # ─── Main ──────────────────────────────────────────────────────────────────
